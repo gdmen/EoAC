@@ -1,0 +1,75 @@
+Hello, B},
+
+I would like your assistance in beta testing an AC-related project I've been working on over this summer.
+
+
+
+The important points:
+1. I'd appreciate it if this (following link and discussion) stays in B}. I think people will be more likely to continue using this application if they are initially exposed to the full featured site rather than the somewhat haphazard current version. I'm thinking about just posting to the AC forum, though and have an 'official' release later.
+2. Only for Windows (.exe) right now. If you don't have a PC, you can still check out the website / look at other people's SS.
+3. http://hype-clan.com/jerbo_a/download.php
+4. I would *LOVE* feedback (gdm.jerboa@gmail.com) on:
+  - any confusing parts about the download instructions
+  - any problems you have with the client (jerboa.exe)
+  - how the website looks
+  - what features you would like to see
+5. Some things are, and will continue to be, broken on the website. I might add something like a red outline to non-functioning components so you don't get too confused or waste time reporting them.
+
+
+
+The long pitch:
+
+Problem: Screenshots are difficult to organize
+Problem: Every screenshot needs to be uploaded to some filesharing site before posting or otherwise sharing it
+Problem: Manually putting together blacklist reports is a pain (and you have to do each one immediately or risk forgetting the reasons!)
+
+Solution: Jerboa! <- I wouldn't mind some help coming up with a good production name \:D
+
+You, the user, do this:
+1. Make an account at http://hype-clan.com/jerbo_a
+3. Download jerboa.exe and autoexec.cfg
+4. Put jerboa.exe and autoexec.cfg into your AC install directory
+5. Run jerboa.exe (this will start the normal ac client)
+
+Features right now:
+
+The /jscreenshot command:
+- The screenshot will be uploaded to the Jerboa website
+- You are, on the website, also able to see a significant amount of data about each ss, such as:
+  > server, map, mode, mastermode, timestamp
+- You can browse and view everyone's screenshots on the Jerboa website
+- *Note: The filtering form on the screenshots page is non functional at the moment
+
+Features coming during the beta:
+*Note: These features are 100% present in the database end of things / are fully planned out, and need either addition to the website UI or addition to the client (jerboa.exe)
+
+If you use the command '/bl <cn> <reason>':
+(for example: /bl 2 far knife)
+*Note: This feature will be coming soon. I had it working in earlier versions of Jerboa, and don't have much work to fix it.
+- A screenshot with that user's /whois will be uploaded (along with all the previously mentioned meta-data ~ server etc.)
+- You will, on the website, be given a copy paste of the blacklist report for that player with as much information as possible filled in
+  > This information will be everything expcept for a demo/demo link.
+  > It would be crazy awesome if Jerboa did that to, but the hosting of those demos will be a pain.
+
+- Functioning filtering/sorting on the screenshots page
+
+- Profiles for each user with:
+  > Ability to delete your own SS
+  > Tag your own SS (and sort them by tag into 'albums')
+  > View SS from other people with you in them
+  
+- For each SS, I also have the pstat_weap data for each player. Thus, I can reasonbly calculate the primary weapon used by each player and have that on the SS page :D
+
+- Landing/home page (with a pitch derived from this one)
+
+- Password recovery >.<
+
+
+
+Extra information for anyone interested:
+
+The images are hosted on imgur.com. An image is never deleted from that site if it is viewed at least once every 6 months. I could have a simple cron job that keeps all SS alive, but am not worrying about that yet. I am worried about changes to imgur's TOS. That would be a big problem. . .
+
+jerboa.exe is all kinds of sexy. Here are a couple of the kinds:
+> If you close AC & Jerboa before an SS can be uploaded, Jerboa will upload it the next time you run the program.
+> If your connection drops or is touch-and-go, Jerboa will back off on its POSTs. Thinking about it now, I'm not sure why this is useful, but it sure is sexy.
