@@ -1,6 +1,0 @@
-(main): autoexec config: config/autoexec.cfg
-ERROR (main): Traceback (most recent call last):
-  File "jerboa.py", line 437, in main
-    config = open(c.CONFIG_FILE, 'r')
-IOError: [Errno 2] No such file or directory: 'config/autoexec.cfg'
-
