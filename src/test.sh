@@ -1,4 +1,4 @@
 ./deploy.sh
 cd ../ac_client
-rm jerboa_logs/*
+mv jerboa_logs/*.txt jerboa_logs/past
 python jerboa.py

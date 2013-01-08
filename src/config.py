@@ -1,5 +1,5 @@
 """
-constants.py
+config.py
 This file contains constants used by jerboa.py
 
 Copyright 2013, gdm
