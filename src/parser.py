@@ -138,11 +138,15 @@ class Parser():
             if groups:
                 self.config.user_id = groups.group(1)
                 self.config.upload_key = groups.group(2)
-                is_line_handled = True
                 self.logger.debug(line)
                 self.logger.debug('(Parser.parseConfigLine): ' +
                                   str(groups.groups()))
-            
+    
+    def reset(self):
+        self.ss_in_progress = False
+        self.ac_players = []
+        self.blacklist = False
+
     def parseLine(self, line, screenshot_taken_queue):
         """
         Parses each line from the AC client output and enqueues screenshot
@@ -255,8 +259,8 @@ class Parser():
                 self.logger.debug('(Parser.parseLine): self.blacklist IP: ' +
                                   str(groups.groups()))
         
-        # Check for procedure end signal and add to screenshot_queue for upload
-        # 
+        # Check for procedure end signal and add screenshot to screenshot_queue
+        # for upload
         groups = re.match('^\[jerboa\]complete', line)
         if groups and self.ss_in_progress:
             # TODO: mildly inefficient
@@ -279,9 +283,7 @@ class Parser():
                     self.blacklist_name + ' self.blacklist',
                     self.blacklist_reason, 'self.blacklist')
             screenshot_taken_queue.put(screenshot, True)
-            self.ss_in_progress = False
-            self.ac_players = []
-            self.blacklist = False
+            self.reset()
             is_line_handled = True
             self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): ' +
