@@ -7,9 +7,14 @@ This wrapper reads the client's stdout and:
 
 Copyright 2013, gdm
 """
-
+"""
+from jerboa_lib.parser import *
+from jerboa_lib.logger import *
+from jerboa_lib.upload import *
+from jerboa_lib import config as c
+"""
 import config as c
-from logger import Logger
+from logger import *
 from parser import *
 from upload import *
 import threading
@@ -39,12 +44,15 @@ class GetUnsentScreenshotsThread(threading.Thread):
         self.upload_url = c.GET_UNSENT_SCREENSHOTS_URL
         self.log_identifier = 'GetUnsentScreenshotsThread'
         self.logger = logger
+        self.successful_post = False
         threading.Thread.__init__(self)
     
+    def stop(self):
+        self.successful_post = True
+
     def run(self):
         try:
-            successful_post = False
-            while not successful_post:
+            while not self.successful_post:
                 post_response = post(self.upload_url,
                                      {'user_id' : self.config.user_id,
                                       'upload_key' : self.config.upload_key},
@@ -67,7 +75,7 @@ class GetUnsentScreenshotsThread(threading.Thread):
                                         self.config.user_id,
                                         self.config.upload_key)
                         self.imgur_queue.put(screenshot, True)
-                    successful_post = True
+                    self.successful_post = True
                 
         except ValueError:
             self.logger.debug('UNEXPECTED NON-JSON RESPONSE.')
@@ -201,19 +209,59 @@ class ScreenshotUploadedThread(AbstractUploadThread):
         return True
 
 
+
 def main():
     """
     Script's entry point.
     """
+    print c.APPLICATION_NAME
+    print "Ctrl-C to exit"
+
+    is_debug = c.IS_DEBUG
+    if len(sys.argv) > 4:
+        print "That's too many command line args!"
+        return
+
     logfile_name = c.LOGFILE_PREFIX + str(time.time()) + c.LOGFILE_SUFFIX
-    logger = Logger(c.LOG_DIR, logfile_name, c.IS_DEBUG)
+    # Commandline debug flag
+    if '-d' in sys.argv:
+        is_debug = True
+        print "Logging to file (" + logfile_name + ")."
+    logger = Logger(c.LOG_DIR, logfile_name, is_debug)
+    
 
-    if len(sys.argv) > 2:
-        logger.debug('ERROR (main): more than one command line parameter.')
-        sys.exit(2)
+    try:
+        # Find and load bash file
+        logger.debug('(main): NT bash: ' + c.NT_DEFAULT_BASH_FILE)
+        logger.debug('(main): POSIX bash: ' + c.POSIX_DEFAULT_BASH_FILE)
+        # Set the default bash file based on OS
+        client_bash = c.POSIX_DEFAULT_BASH_FILE
+        if os.name == c.POSIX_OS_NAME:
+            logger.debug('(main): OS is POSIX.')
+        elif os.name == c.NT_OS_NAME:
+            client_bash = c.NT_DEFAULT_BASH_FILE
+            logger.debug('(main): OS is NT.')
+        else:
+            logger.debug('UNEXPECTED (main): OS is ' + os.name + '.')
+        # If bash file was specified by user, use that instead
+        # Might throw an IndexError
+        if len(sys.argv) >= 3 and '-c' in sys.argv:
+            client_bash = sys.argv[sys.argv.index('-c') + 1]
+            print "Using specified bash file (" + client_bash + ")."
+        logger.debug('(main): client bash is ' + client_bash + '.')
+    except IndexError:
+        logger.debug('ERROR (main): ' + traceback.format_exc())
+        print 'Most likely a command line parameter mistake: ',
+        if is_debug:
+            print 'see logfile (' + logfile_name + ').'
+        else:
+            print 're-run with logging enabled:'
+            print 'proper usage:'
+            print '> python jerboa.py -d'
+            print '> python jerboa.py -d -c <custom config>'
+        logger.close()
+        return
 
-    # Only attempt to close the client if the client has been started
-    ac_client_started = False
     try:
         # Instantiate Parser
         parser = Parser(logger)
@@ -255,23 +303,28 @@ def main():
                                             imgur_upload_in_queue,
                                             parser.config,
                                             logger)
-        # Find and load bash file
-        logger.debug('(main): NT bash: ' + c.NT_DEFAULT_BASH_FILE)
-        logger.debug('(main): POSIX bash: ' + c.POSIX_DEFAULT_BASH_FILE)
-        # Set the default bash file based on OS
-        client_bash = c.POSIX_DEFAULT_BASH_FILE
-        if os.name == c.POSIX_OS_NAME:
-            logger.debug('(main): OS is POSIX.')
-        elif os.name == c.NT_OS_NAME:
-            client_bash = c.NT_DEFAULT_BASH_FILE
-            logger.debug('(main): OS is NT.')
+    except IOError:
+        logger.debug('ERROR (main): ' + traceback.format_exc())
+        print 'Could not find required file: ',
+        if is_debug:
+            print 'see logfile (' + logfile_name + ').'
         else:
-            logger.debug('UNEXPECTED (main): OS is ' + os.name + '.')
-        # If bash file was input, use that instead
-        if len(sys.argv) == 2:
-            client_bash = sys.argv[1]
-        logger.debug('(main): client bash is ' + client_bash + '.')
-        
+            print 're-run with logging enabled:'
+            print 'proper usage:'
+            print '> python jerboa.py -d'
+            print '> python jerboa.py -d -c <custom config>'
+        print '. . .'
+        get_unsent_screenshots_thread.stop()
+        screenshot_taken_thread.stop()
+        imgur_upload_thread.stop()
+        screenshot_uploaded_thread.stop()
+        logger.close()
+        return
+       
+
+    # Only attempt to close the client if the client has been started
+    ac_client_started = False
+    try:
         """
         bash = open(client_bash)
         ac_client = None
@@ -297,23 +350,28 @@ def main():
                                      stdin = subprocess.PIPE,
                                      stdout = subprocess.PIPE,
                                      stderr = subprocess.STDOUT)
-        print c.APPLICATION_NAME
-        print "Ctrl-C to exit"
         # Avoid having to re-interpret dot notation in the loop
         ac_readline = ac_client.stdout.readline
         logger.debug('(main): Start parsing loop.')
-
         while True:
             parser.parseLine(ac_readline(), screenshot_taken_in_queue)
-            
-    except IOError:
+    except OSError:
         logger.debug('ERROR (main): ' + traceback.format_exc())
-        print 'Could not find required file: ',
-        if c.IS_DEBUG:
+        print 'Check your specified bash file: ',
+        if is_debug:
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            print '> python jerboa.py 1'
+            print 'proper usage:'
+            print '> python jerboa.py -d'
+            print '> python jerboa.py -d -c <custom config>'
+        print '. . .'
+        get_unsent_screenshots_thread.stop()
+        screenshot_taken_thread.stop()
+        imgur_upload_thread.stop()
+        screenshot_uploaded_thread.stop()
+        logger.close()
+        return
     except KeyboardInterrupt:
         print '\nFinishing uploads, please wait . . .'
         if ac_client_started:

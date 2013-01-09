@@ -6,7 +6,7 @@ Copyright 2013, gdm
 """
 
 # Toggles debug logging
-IS_DEBUG = True
+IS_DEBUG = False
 # Debug logging parameters
 LOG_DIR = 'jerboa_logs'
 LOGFILE_PREFIX = 'jerboa_log_'
@@ -30,7 +30,7 @@ POSIX_DEFAULT_BASH_FILE = 'assaultcube.sh'
 CONFIG_FILE = 'config/autoexec.cfg'
 
 # Imgur
-IMGUR_API_KEY = '475add36e0e43bd3d3c4510fd436e8e2'
+IMGUR_API_KEY = ''
 IMGUR_UPLOAD_URL = 'http://api.imgur.com/2/upload.json'
 
 # Jerboa's RESTful urls
