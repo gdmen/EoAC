@@ -1,6 +1,6 @@
 *~
 *.py[cod]
-config.py
+ac_client
 
 # C extensions
 *.so
