@@ -13,10 +13,10 @@ from jerboa_lib.logger import *
 from jerboa_lib.upload import *
 from jerboa_lib import config as c
 """
-import config as c
-from logger import *
-from parser import *
-from upload import *
+import j_config as c
+from j_logger import *
+from j_parser import *
+from j_upload import *
 import threading
 import time
 import os
@@ -46,6 +46,8 @@ class GetUnsentScreenshotsThread(threading.Thread):
         self.logger = logger
         self.successful_post = False
         threading.Thread.__init__(self)
+        # self-starting thread
+        self.start()
     
     def stop(self):
         self.successful_post = True
@@ -215,7 +217,8 @@ def main():
     Script's entry point.
     """
     print c.APPLICATION_NAME
-    print "Ctrl-C to exit"
+    if os.name != c.NT_OS_NAME:
+        print "Ctrl-C to exit"
 
     is_debug = c.IS_DEBUG
     if len(sys.argv) > 4:
@@ -248,6 +251,8 @@ def main():
         if len(sys.argv) >= 3 and '-c' in sys.argv:
             client_bash = sys.argv[sys.argv.index('-c') + 1]
             print "Using specified bash file (" + client_bash + ")."
+        if os.name == c.POSIX_OS_NAME:
+            client_bash = './' + client_bash
         logger.debug('(main): client bash is ' + client_bash + '.')
     except IndexError:
         logger.debug('ERROR (main): ' + traceback.format_exc())
@@ -345,16 +350,22 @@ def main():
                 elif not 'jerboa.py' in cmd:
                     os.popen(cmd)
         """
-        ac_client = subprocess.Popen('./' + client_bash,
+        ac_client = subprocess.Popen(client_bash,
                                      shell = False,
                                      stdin = subprocess.PIPE,
                                      stdout = subprocess.PIPE,
                                      stderr = subprocess.STDOUT)
+        #ac_client_started = True
         # Avoid having to re-interpret dot notation in the loop
         ac_readline = ac_client.stdout.readline
         logger.debug('(main): Start parsing loop.')
         while True:
             parser.parseLine(ac_readline(), screenshot_taken_in_queue)
+            # Windows holds up the KeyboardInterrupt and this script never
+            # receives it (without this sleep)
+            # time.sleep(1)
+            # BUT, with the sleep, the logs are parsed far too slowly >.>
+            # Solution: No Ctrl-C for Windows.
     except OSError:
         logger.debug('ERROR (main): ' + traceback.format_exc())
         print 'Check your specified bash file: ',
@@ -374,6 +385,8 @@ def main():
         return
     except KeyboardInterrupt:
         print '\nFinishing uploads, please wait . . .'
+        """
+        # Unused atm
         if ac_client_started:
             ac_client.stdin.close()
             ac_client.stdout.close()
@@ -388,7 +401,7 @@ def main():
                     logger.debug('UNEXPECTED (main): ac_client.returncode: ' +
                           str(ac_client.returncode))
                     break
-        
+        """
         # Close the log file when no longer running
         # Make sure all upload threads are done
         # (Don't want to interrupt an upload)

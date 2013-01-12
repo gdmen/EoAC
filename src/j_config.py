@@ -12,8 +12,8 @@ LOG_DIR = 'jerboa_logs'
 LOGFILE_PREFIX = 'jerboa_log_'
 LOGFILE_SUFFIX = '.txt'
 
-#HOST_URL = 'http://hype-clan.com/jerbo_a'
-HOST_URL = 'http://localhost/jerboa_website'
+HOST_URL = 'http://hype-clan.com/jerbo_a/restful_api/'
+#HOST_URL = 'http://localhost/jerboa_website/restful_api/'
 
 APPLICATION_NAME = 'Jerboa AssaultCube Client Wrapper'
 ASSAULTCUBE_VERSION = '1.1.0.4'
@@ -34,9 +34,9 @@ IMGUR_API_KEY = '475add36e0e43bd3d3c4510fd436e8e2'
 IMGUR_UPLOAD_URL = 'http://api.imgur.com/2/upload.json'
 
 # Jerboa's RESTful urls
-GET_UNSENT_SCREENSHOTS_URL = HOST_URL + '/restful_api/get_unsent_screenshots.php'
-TAKEN_SCREENSHOT_URL = HOST_URL + '/restful_api/taken_screenshot.php'
-UPLOADED_SCREENSHOT_URL = HOST_URL + '/restful_api/uploaded_screenshot.php'
+GET_UNSENT_SCREENSHOTS_URL = HOST_URL + 'get_unsent_screenshots.php'
+TAKEN_SCREENSHOT_URL = HOST_URL + 'taken_screenshot.php'
+UPLOADED_SCREENSHOT_URL = HOST_URL + 'uploaded_screenshot.php'
 
 # POST intervals (seconds)
 # '1' should be the minimum UPDATE_INTERVAL

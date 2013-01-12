@@ -9,7 +9,7 @@ Copyright 2013, gdm
 """
 
 # TODO: get rid of the config import?
-import config as c
+import j_config as c
 import Queue
 import threading
 import time
