@@ -326,9 +326,6 @@ def main():
         logger.close()
         return
        
-
-    # Only attempt to close the client if the client has been started
-    ac_client_started = False
     try:
         """
         bash = open(client_bash)
@@ -385,38 +382,20 @@ def main():
         return
     except KeyboardInterrupt:
         print '\nFinishing uploads, please wait . . .'
-        """
-        # Unused atm
-        if ac_client_started:
-            ac_client.stdin.close()
-            ac_client.stdout.close()
-            ac_client.send_signal(signal.CTRL_C_EVENT)
-            while not ac_client.returncode:
-                try:
-                    ac_client.kill()
-                    time.sleep(c.EXIT_RETRY_INTERVAL)
-                except:
-                    logger.debug('UNEXPECTED (main): ac_client.kill(): ' +
-                          traceback.format_exc())
-                    logger.debug('UNEXPECTED (main): ac_client.returncode: ' +
-                          str(ac_client.returncode))
-                    break
-        """
         # Close the log file when no longer running
         # Make sure all upload threads are done
         # (Don't want to interrupt an upload)
-        # TODO: add a backoff here + a message
+        # TODO: add a backoff here + a message ?
         while screenshot_taken_in_queue.qsize() > 0:
             time.sleep(1)
         screenshot_taken_thread.stop()
 
-        # imgur uploads are time consuming, so finish the current upload
-        # and leave the rest for the next time jerboa is run
-        imgur_upload_thread.stop()
-        # Stay here until the screenshot_upload_in_queue has been updated
+        # Finish all imgur uploads (could be time consuming!)
         while imgur_upload_thread.isAlive():
             time.sleep(1)
+        imgur_upload_thread.stop()
 
+        # Finish all application website updates
         while screenshot_uploaded_in_queue.qsize() > 0:
             time.sleep(1)
         screenshot_uploaded_thread.stop()

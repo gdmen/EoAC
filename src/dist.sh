@@ -17,5 +17,5 @@ rm $BIN/jerboa.zip
     [ "$logfiles" == "0" ] || mv $TEST/jerboa_logs/*.txt $TEST/jerboa_logs/past
 if ! $1 ; then
     cd $TEST
-    ./jerboa
+    ./jerboa -d
 fi
