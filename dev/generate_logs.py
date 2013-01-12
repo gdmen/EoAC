@@ -2,10 +2,8 @@
 generate_logs.py
 Saves AssaultCube client logs to file
 
-Copyright 2012, Gary Menezes
+Copyright 2012, gdm
 """
-
-import constants as c
 import threading
 import time
 import os
