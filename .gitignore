@@ -1,4 +1,5 @@
 *~
 *.py[cod]
 ac_client
-
+dist/win/build
+dist/win/dist
