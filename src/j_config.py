@@ -15,9 +15,9 @@ LOGFILE_SUFFIX = '.txt'
 HOST_URL = 'http://hype-clan.com/jerbo_a/restful_api/'
 #HOST_URL = 'http://localhost/jerboa_website/restful_api/'
 
-APPLICATION_NAME = 'Jerboa AssaultCube Client Wrapper'
+APPLICATION_NAME = 'EoAC'
 ASSAULTCUBE_VERSION = '1.1.0.4'
-APPLICATION_VERSION = ASSAULTCUBE_VERSION + '.2'
+APPLICATION_VERSION = ASSAULTCUBE_VERSION + '.3'
 
 # Exiting procedure timeout
 EXIT_RETRY_INTERVAL = 1
@@ -45,3 +45,11 @@ UPLOADED_SCREENSHOT_URL = HOST_URL + 'uploaded_screenshot.php'
 UPDATE_INTERVAL = 1
 UPDATE_BACKOFF_INCREMENT = 5
 MAX_UPDATE_BACKOFF = 60
+
+# Annoying, but these params must be manually kept up to date along with the
+# params in website/j_config.py
+APP_NAME = "Eye of AC"
+# To be clear, this 'LOG_NAME' is for parsing cubescript output
+LOG_NAME = "EoAC"
+FILE_NAME_WIN = "eoac.exe"
+FILE_NAME_NIX = "eoac"

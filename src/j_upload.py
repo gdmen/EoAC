@@ -35,7 +35,8 @@ def post(url, params, logger):
         return urllib.urlopen(url, urllib.urlencode(params))
     except IOError, e:
         logger.debug('ERROR (post): ' + traceback.format_exc())
-        print 'Failure to connect to the ' + c.APPLICATION_NAME + ' server . . .'
+        print 'Failed to connect to the ' + c.APPLICATION_NAME + ' server.'
+        print 'Retrying . . .'
         return False
     except:
         logger.debug('ERROR UNEXPECTED (post): ' + traceback.format_exc())
@@ -63,15 +64,13 @@ class AbstractUploadThread(threading.Thread):
         # backoff procedure alters the number of loops made before action.
         # e.g. if b_post_interval is 20, the run loop will loops 20 times with no
         # action other than sleeping for c.UPDATE_INTERVAL
-        # This allows for faster (graceful) stoppgae of the thread and is a bit
+        # This allows for faster (graceful) stoppe of the thread and is a bit
         # cleaner than saving and comparing times between posts
         self.b_counter = 0
         self.b_last_post = 0
         self.b_post_interval = 1
         self.logger = logger
         threading.Thread.__init__(self)
-        # self-starting thread
-        self.start()
     
     def backoff(self):
         if self.b_post_interval <= (c.MAX_UPDATE_BACKOFF -
@@ -104,6 +103,7 @@ class AbstractUploadThread(threading.Thread):
             try:
                 self.b_counter += 1
                 if self.b_counter - self.b_last_post >= self.b_post_interval:
+                    self.b_last_post = self.b_counter
                     # Get the next element to POST
                     # get_nowait() throws an empty queue exception - this is
                     # caught and ignored (if it blocks here, we may not be able

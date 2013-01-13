@@ -11,6 +11,8 @@ This file contains classes and methods used by jerboa.py
 Copyright 2013, gdm
 """
 
+# TODO: get rid of the config import?
+import j_config as c
 import re
 import time
 import traceback
@@ -129,16 +131,17 @@ class Parser():
         # Ignore empty lines
         if line != '':
 
+            self.logger.debug(line)
+
             # Sample config section:
-            # // [JERBOA] DO NOT ALTER OR DELETE THIS COMMENT: 12 Art84j4a
-            # // [JERBOA] DO NOT ALTER OR DELETE THIS COMMENT: <user id> <upload key>
+            # // [<log name>] DO NOT ALTER OR DELETE THIS COMMENT: 12 Art84j4a
+            # // [<log name>]] DO NOT ALTER OR DELETE THIS COMMENT: <user id> <upload key>
 
             # Check for user's config parameters:
-            groups = re.match('^\s*//\s*\[JERBOA\] DO NOT ALTER OR DELETE THIS COMMENT:\s+(\d+)\s+(.*)', line)
+            groups = re.match('^\s*//\s*\[' + c.LOG_NAME +'\] DO NOT ALTER OR DELETE THIS COMMENT:\s+(\d+)\s+(.*)', line)
             if groups:
                 self.config.user_id = groups.group(1)
                 self.config.upload_key = groups.group(2)
-                self.logger.debug(line)
                 self.logger.debug('(Parser.parseConfigLine): ' +
                                   str(groups.groups()))
     
@@ -159,15 +162,14 @@ class Parser():
             Updates state
         """
         
-        # Used for debug logging
-        is_line_handled = False
-        
         # Clean up input line
         line = line.strip()
 
         # Ignore empty lines
         if line == '':
             return
+
+        self.logger.debug(line)
         
         # Check for screenshot command:
         # Get screenshot url and add to screenshot_queue for upload
@@ -179,8 +181,6 @@ class Parser():
             self.most_recent_ss_name = groups.group(1)
             self.ss_in_progress = True
             self.ac_players = []
-            is_line_handled = True
-            self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): Screenshot: ' +
                               str(groups.groups()))
             
@@ -190,13 +190,11 @@ class Parser():
         groups = re.match('^minutesremaining\s+=\s+(\d+)', line)
         if groups:
             self.ac_minutes_remaining = int(groups.group(1))
-            is_line_handled = True
-            self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): minutesremaining: ' +
                               str(groups.groups()))
             
         # Check for server info:
-        groups = re.match('^\[jerboa\]server_info\s([^\s]+)\s(\d+)\s(\d+)\s?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})?\s?(\d+)?', line)
+        groups = re.match('^\[' + c.LOG_NAME +'\]server_info\s([^\s]+)\s(\d+)\s(\d+)\s?(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})?\s?(\d+)?', line)
         # Get map/mode and server details.
         # [jerboa]server_info ac_desert 7 0 64.85.165.123 28765
         # [jerboa]server_info <map> <mode id> <mastermode id> <server ip> <server port>
@@ -206,8 +204,6 @@ class Parser():
             self.ac_mastermode = groups.group(3)
             self.ac_ip = "" if groups.group(4) == None else groups.group(4)
             self.ac_port = "" if groups.group(5) == None else groups.group(5)
-            is_line_handled = True
-            self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): [jerboa]server_info: ' +
                               str(groups.groups()))
 
@@ -218,22 +214,18 @@ class Parser():
         # <shotgun_atk> <shotgun_dmg> <smg_atk> <smg_dmg> <sniper_atk> <sniper_dmg>
         # <assault_atk> <assault_dmg> <cpistol_atk> <cpistol_dmg> <nade_atk> <nade_dmg>
         # <akimbo_atk> <akimbo_dmg>
-        groups = re.match('^\[jerboa\]pstat_info (\d+)\s(-?\d+)\s(-?\d+)\s(\d+)\s(-?\d+)\s(\d+)\s(.*)\s(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*', line)
+        groups = re.match('^\[' + c.LOG_NAME +'\]pstat_info (\d+)\s(-?\d+)\s(-?\d+)\s(\d+)\s(-?\d+)\s(\d+)\s(.*)\s(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s+(\d+)\s*', line)
         if groups:
             self.ac_players.append(groups.groups())
-            is_line_handled = True
-            self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): pstat_info: ' +
                               str(groups.groups()))
 
         # Check for self.blacklist
         # [jerboa]self.blacklist reason: cheating cheater
-        groups = re.match('^\[jerboa\]self.blacklist reason:\s+(.*)$', line)
+        groups = re.match('^\[' + c.LOG_NAME +'\]self.blacklist reason:\s+(.*)$', line)
         if groups:
             self.blacklist_reason = groups.group(1).strip()
             self.blacklist = True
-            is_line_handled = True
-            self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): self.blacklist: ' +
                               str(groups.groups()))
 
@@ -244,8 +236,6 @@ class Parser():
             groups = re.match('^name\s+(.*)$', line)
             if groups:
                 self.blacklist_name = groups.group(1).strip()
-                is_line_handled = True
-                self.logger.debug(line)
                 self.logger.debug('(Parser.parseLine): self.blacklist name: ' +
                                   str(groups.groups()))
 
@@ -254,14 +244,12 @@ class Parser():
             groups = re.match('^IP\s+(.*)$', line)
             if groups:
                 self.blacklist_ip = groups.group(1).strip()
-                is_line_handled = True
-                self.logger.debug(line)
                 self.logger.debug('(Parser.parseLine): self.blacklist IP: ' +
                                   str(groups.groups()))
         
         # Check for procedure end signal and add screenshot to screenshot_queue
         # for upload
-        groups = re.match('^\[jerboa\]complete', line)
+        groups = re.match('^\[' + c.LOG_NAME +'\]complete', line)
         if groups and self.ss_in_progress:
             # TODO: mildly inefficient
             screenshot = ScreenshotData(self.most_recent_ss_name,
@@ -282,15 +270,10 @@ class Parser():
                     self.blacklist_reason,
                     self.blacklist_name + ' self.blacklist',
                     self.blacklist_reason, 'self.blacklist')
+            self.logger.debug('(Parser.parseLine): Right before push ' + screenshot.local_file_path);
             screenshot_taken_queue.put(screenshot, True)
+            self.logger.debug('(Parser.parseLine): Pushed ' + screenshot.local_file_path + ' into queue!');
             self.reset()
-            is_line_handled = True
-            self.logger.debug(line)
             self.logger.debug('(Parser.parseLine): ' +
                               self.most_recent_ss_name +
                               ' procedure complete: ' + str(time.time()))
-
-        # Debug
-        if not is_line_handled:
-            self.logger.debug(line)
-            pass

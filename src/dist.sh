@@ -2,9 +2,11 @@
 
 # build
 BIN="../dist/linux"
+DIST="../../jerboa_website/downloads"
 TEST="../ac_client"
 zip $BIN/jerboa.zip *.py
 cat $BIN/bundle.sh $BIN/jerboa.zip > $BIN/jerboa
+cp $BIN/jerboa $DIST/jerboa
 
 # cleanup
 rm $BIN/jerboa.zip

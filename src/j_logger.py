@@ -48,20 +48,22 @@ class Logger():
                 return filehandle
         return False
 
-    def debug(self, msg):
+    def debug(self, msg, printout = False):
         """
         Parameters:
             msg = <string> message to print
         """
         if self.is_debug:
-            self.write(msg)
+            self.write(msg, printout)
 
-    def write(self, msg):
+    def write(self, msg, printout = False):
         """
         Only writes the first 'self.msg_length' characters of each 'msg' into
         'self.logfile' in order to avoid unreadable logs.
         """
         try:
+            if printout:
+              print msg[:self.msg_length]
             if not self.logfile.closed:
                 self.logfile.write(msg[:self.msg_length] + '\n')
             else:

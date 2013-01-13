@@ -7,12 +7,6 @@ This wrapper reads the client's stdout and:
 
 Copyright 2013, gdm
 """
-"""
-from jerboa_lib.parser import *
-from jerboa_lib.logger import *
-from jerboa_lib.upload import *
-from jerboa_lib import config as c
-"""
 import j_config as c
 from j_logger import *
 from j_parser import *
@@ -46,8 +40,6 @@ class GetUnsentScreenshotsThread(threading.Thread):
         self.logger = logger
         self.successful_post = False
         threading.Thread.__init__(self)
-        # self-starting thread
-        self.start()
     
     def stop(self):
         self.successful_post = True
@@ -216,9 +208,7 @@ def main():
     """
     Script's entry point.
     """
-    print c.APPLICATION_NAME
-    if os.name != c.NT_OS_NAME:
-        print "Ctrl-C to exit"
+    print c.APPLICATION_NAME + ' version ' + c.APPLICATION_VERSION
 
     is_debug = c.IS_DEBUG
     if len(sys.argv) > 4:
@@ -261,13 +251,17 @@ def main():
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            print 'proper usage:'
-            print '> python jerboa.py -d'
-            print '> python jerboa.py -d -c <custom config>'
+            if os.name == c.POSIX_OS_NAME:
+                print '> ./' + c.FILE_NAME_NIX +' -d'
+                print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+            elif os.name == c.NT_OS_NAME:
+                print '> ' + c.FILE_NAME_WIN +' -d'
+                print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
         logger.close()
         return
 
     try:
+        threads_initiated = False
         # Instantiate Parser
         parser = Parser(logger)
         # Read in configuration parameters
@@ -289,12 +283,14 @@ def main():
                                         screenshot_uploaded_in_queue,
                                         parser.config,
                                         logger)
+        screenshot_uploaded_thread.start();
         
         # ImmgurUploadThread (third stage)
         imgur_upload_in_queue = Queue.Queue(maxsize=0)
         imgur_upload_thread = ImgurUploadThread(imgur_upload_in_queue,
                                                 screenshot_uploaded_in_queue,
                                                 logger)
+        imgur_upload_thread.start();
         
         # ScreenshotTakenThread (second stage)
         screenshot_taken_in_queue = Queue.Queue(maxsize=0)
@@ -302,12 +298,15 @@ def main():
                                     screenshot_taken_in_queue,
                                     imgur_upload_in_queue,
                                     parser.config, logger)
+        screenshot_taken_thread.start();
         
         # GetUnsentScreenshotsThread (first stage)
         get_unsent_screenshots_thread = GetUnsentScreenshotsThread(
                                             imgur_upload_in_queue,
                                             parser.config,
                                             logger)
+        get_unsent_screenshots_thread.start();
+        threads_initiated = True
     except IOError:
         logger.debug('ERROR (main): ' + traceback.format_exc())
         print 'Could not find required file: ',
@@ -315,14 +314,18 @@ def main():
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            print 'proper usage:'
-            print '> python jerboa.py -d'
-            print '> python jerboa.py -d -c <custom config>'
+            if os.name == c.POSIX_OS_NAME:
+                print '> ./' + c.FILE_NAME_NIX +' -d'
+                print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+            elif os.name == c.NT_OS_NAME:
+                print '> ' + c.FILE_NAME_WIN +' -d'
+                print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
         print '. . .'
-        get_unsent_screenshots_thread.stop()
-        screenshot_taken_thread.stop()
-        imgur_upload_thread.stop()
-        screenshot_uploaded_thread.stop()
+        if threads_initiated:
+          get_unsent_screenshots_thread.stop()
+          screenshot_taken_thread.stop()
+          imgur_upload_thread.stop()
+          screenshot_uploaded_thread.stop()
         logger.close()
         return
        
@@ -349,15 +352,16 @@ def main():
         """
         ac_client = subprocess.Popen(client_bash,
                                      shell = False,
-                                     stdin = subprocess.PIPE,
                                      stdout = subprocess.PIPE,
                                      stderr = subprocess.STDOUT)
-        #ac_client_started = True
         # Avoid having to re-interpret dot notation in the loop
         ac_readline = ac_client.stdout.readline
         logger.debug('(main): Start parsing loop.')
         while True:
-            parser.parseLine(ac_readline(), screenshot_taken_in_queue)
+            line = ac_readline()
+            if not line:
+                raise KeyboardInterrupt()
+            parser.parseLine(line, screenshot_taken_in_queue)
             # Windows holds up the KeyboardInterrupt and this script never
             # receives it (without this sleep)
             # time.sleep(1)
@@ -370,18 +374,27 @@ def main():
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            print 'proper usage:'
-            print '> python jerboa.py -d'
-            print '> python jerboa.py -d -c <custom config>'
+            if os.name == c.POSIX_OS_NAME:
+                print '> ./' + c.FILE_NAME_NIX +' -d'
+                print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+            elif os.name == c.NT_OS_NAME:
+                print '> ' + c.FILE_NAME_WIN +' -d'
+                print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
         print '. . .'
         get_unsent_screenshots_thread.stop()
         screenshot_taken_thread.stop()
         imgur_upload_thread.stop()
         screenshot_uploaded_thread.stop()
         logger.close()
-        return
+        raise
     except KeyboardInterrupt:
-        print '\nFinishing uploads, please wait . . .'
+        logger.debug('KeyboardInterrupt (main)')
+        remaining_uploads = screenshot_taken_in_queue.qsize() + imgur_upload_in_queue.qsize()
+        prnt = '\nFinishing ' + str(remaining_uploads) + ' upload'
+        if remaining_uploads != 1:
+            prnt += 's'
+        prnt += ', please wait . . .'
+        print prnt
         # Close the log file when no longer running
         # Make sure all upload threads are done
         # (Don't want to interrupt an upload)
@@ -389,18 +402,23 @@ def main():
         while screenshot_taken_in_queue.qsize() > 0:
             time.sleep(1)
         screenshot_taken_thread.stop()
-
+        while screenshot_taken_thread.isAlive():
+            time.sleep(1)
         # Finish all imgur uploads (could be time consuming!)
-        while imgur_upload_thread.isAlive():
+        while imgur_upload_in_queue.qsize() > 0:
             time.sleep(1)
         imgur_upload_thread.stop()
+        while imgur_upload_thread.isAlive():
+            time.sleep(1)
 
         # Finish all application website updates
         while screenshot_uploaded_in_queue.qsize() > 0:
             time.sleep(1)
         screenshot_uploaded_thread.stop()
+        while screenshot_uploaded_thread.isAlive():
+            time.sleep(1)
         
-        while screenshot_taken_thread.isAlive() or screenshot_uploaded_thread.isAlive():
+        while screenshot_taken_thread.isAlive() or imgur_upload_thread.isAlive() or screenshot_uploaded_thread.isAlive():
             time.sleep(1)
         
         logger.close()
