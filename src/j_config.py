@@ -4,12 +4,21 @@ This file contains constants used by jerboa.py
 
 Copyright 2013, gdm
 """
+###############################################################################
+# Annoying, but these params must be manually kept up to date along with the
+# params in website/j_config.py
+APP_NAME = "Eye of AC"
+# To be clear, this 'LOG_NAME' is for parsing cubescript output
+LOG_NAME = "EoAC"
+FILE_NAME_WIN = "eoac.exe"
+FILE_NAME_NIX = "eoac"
+###############################################################################
 
 # Toggles debug logging
 IS_DEBUG = False
 # Debug logging parameters
-LOG_DIR = 'jerboa_logs'
-LOGFILE_PREFIX = 'jerboa_log_'
+LOG_DIR = LOG_NAME + '_logs'
+LOGFILE_PREFIX = LOG_NAME + '_log_'
 LOGFILE_SUFFIX = '.txt'
 
 HOST_URL = 'http://hype-clan.com/jerbo_a/restful_api/'
@@ -45,11 +54,3 @@ UPLOADED_SCREENSHOT_URL = HOST_URL + 'uploaded_screenshot.php'
 UPDATE_INTERVAL = 1
 UPDATE_BACKOFF_INCREMENT = 5
 MAX_UPDATE_BACKOFF = 60
-
-# Annoying, but these params must be manually kept up to date along with the
-# params in website/j_config.py
-APP_NAME = "Eye of AC"
-# To be clear, this 'LOG_NAME' is for parsing cubescript output
-LOG_NAME = "EoAC"
-FILE_NAME_WIN = "eoac.exe"
-FILE_NAME_NIX = "eoac"

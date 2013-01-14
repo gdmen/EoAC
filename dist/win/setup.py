@@ -6,6 +6,8 @@ setup(
     zipfile=None, # library files in exe instead of zipfile (defaults to "library.zip")
     options = {
         'py2exe': {
+            "unbuffered": True,
+            "optimize": 2,
             'bundle_files': 1, # bundle dlls and python interpreter in the exe
          }
     }

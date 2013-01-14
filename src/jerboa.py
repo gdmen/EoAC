@@ -61,6 +61,13 @@ class GetUnsentScreenshotsThread(threading.Thread):
                                   str(local_file_paths_json))
 
                 if not local_file_paths_json == None:
+                    num_uploads = len(local_file_paths_json)
+                    if num_uploads > 0:
+                        prnt = 'Uploading ' + str(num_uploads) + ' prior screenshot'
+                        if num_uploads != 1:
+                            prnt += 's'
+                        prnt += '. . .'
+                        self.logger.debug(prnt, True)
                     for local_file_path in local_file_paths_json:
                         self.logger.debug('(' + self.log_identifier + '.run): ' +
                                           'FILE PATH: ' + local_file_path)
@@ -121,8 +128,16 @@ class ScreenshotTakenThread(AbstractUploadThread):
         Handles the response from POST.
         Returns TRUE on expected response, FALSE for a retry
         """
-        self.out_queue.put(screenshot)
-        return True
+        if len(post_response) > 0:
+            self.logger.debug(self.log_identifier + ': POST RESPONSE ERROR')
+            self.logger.debug(self.log_identifier + ': POST RESPONSE: ' +
+                              str(post_response))
+            return False
+        else:
+            self.out_queue.put(screenshot)
+            self.logger.debug('Uploading ' +
+                              str(os.path.basename(screenshot.local_file_path)), True)
+            return True
 
 
 class ImgurUploadThread(AbstractUploadThread):
@@ -200,7 +215,15 @@ class ScreenshotUploadedThread(AbstractUploadThread):
         Handles the response from POST.
         Returns TRUE on expected response, FALSE for a retry
         """
-        return True
+        if len(post_response) > 0:
+            self.logger.debug(self.log_identifier + ': POST RESPONSE ERROR')
+            self.logger.debug(self.log_identifier + ': POST RESPONSE: ' +
+                              str(post_response))
+            return False
+        else:
+            self.logger.debug('Finished ' +
+                              str(os.path.basename(screenshot.local_file_path)), True)
+            return True
 
 
 
@@ -213,6 +236,7 @@ def main():
     is_debug = c.IS_DEBUG
     if len(sys.argv) > 4:
         print "That's too many command line args!"
+        raw_input("Press Enter to Quit")
         return
 
     logfile_name = c.LOGFILE_PREFIX + str(time.time()) + c.LOGFILE_SUFFIX
@@ -258,6 +282,7 @@ def main():
                 print '> ' + c.FILE_NAME_WIN +' -d'
                 print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
         logger.close()
+        raw_input("Press Enter to Quit")
         return
 
     try:
@@ -272,6 +297,7 @@ def main():
             logger.debug('(main): ' + c.CONFIG_FILE + ' missing parameters.')
             print 'ERROR: missing configuration parameter in ' + c.CONFIG_FILE
             logger.close()
+            raw_input("Press Enter to Quit")
             return
 
         # Only start up upload/dowload threads after getting config parameters
@@ -327,6 +353,7 @@ def main():
           imgur_upload_thread.stop()
           screenshot_uploaded_thread.stop()
         logger.close()
+        raw_input("Press Enter to Quit")
         return
        
     try:
@@ -359,7 +386,7 @@ def main():
         logger.debug('(main): Start parsing loop.')
         while True:
             line = ac_readline()
-            if not line:
+            if not line or ac_client.poll() != None:
                 raise KeyboardInterrupt()
             parser.parseLine(line, screenshot_taken_in_queue)
             # Windows holds up the KeyboardInterrupt and this script never
@@ -386,42 +413,61 @@ def main():
         imgur_upload_thread.stop()
         screenshot_uploaded_thread.stop()
         logger.close()
-        raise
+        raw_input("Press Enter to Quit")
+        return
     except KeyboardInterrupt:
-        logger.debug('KeyboardInterrupt (main)')
-        remaining_uploads = screenshot_taken_in_queue.qsize() + imgur_upload_in_queue.qsize()
-        prnt = '\nFinishing ' + str(remaining_uploads) + ' upload'
-        if remaining_uploads != 1:
-            prnt += 's'
-        prnt += ', please wait . . .'
-        print prnt
-        # Close the log file when no longer running
-        # Make sure all upload threads are done
-        # (Don't want to interrupt an upload)
-        # TODO: add a backoff here + a message ?
-        while screenshot_taken_in_queue.qsize() > 0:
-            time.sleep(1)
-        screenshot_taken_thread.stop()
-        while screenshot_taken_thread.isAlive():
-            time.sleep(1)
-        # Finish all imgur uploads (could be time consuming!)
-        while imgur_upload_in_queue.qsize() > 0:
-            time.sleep(1)
-        imgur_upload_thread.stop()
-        while imgur_upload_thread.isAlive():
-            time.sleep(1)
+        try:
+          logger.debug('KeyboardInterrupt (main)')
 
-        # Finish all application website updates
-        while screenshot_uploaded_in_queue.qsize() > 0:
-            time.sleep(1)
-        screenshot_uploaded_thread.stop()
-        while screenshot_uploaded_thread.isAlive():
-            time.sleep(1)
-        
-        while screenshot_taken_thread.isAlive() or imgur_upload_thread.isAlive() or screenshot_uploaded_thread.isAlive():
-            time.sleep(1)
-        
-        logger.close()
+          logger.debug('\nSaving screenshots, do not exit.', True)
+          # Make sure we get any remaining output chilling in the subprocess's
+          # output pipe
+          while True:
+              line = ac_readline()
+              if not line:
+                  break
+              parser.parseLine(line, screenshot_taken_in_queue)
+
+          remaining_uploads = screenshot_taken_in_queue.qsize() + imgur_upload_in_queue.qsize()
+          prnt = str(remaining_uploads) + ' upload'
+          if remaining_uploads != 1:
+              prnt += 's'
+          prnt += ' remaining, please wait . . .'
+          logger.debug(prnt, True)
+
+          # Close the log file when no longer running
+          # Make sure all upload threads are done
+          # (Don't want to interrupt an upload)
+          # TODO: add a backoff here + a message ?
+          while screenshot_taken_in_queue.qsize() > 0:
+              time.sleep(0.01)
+          screenshot_taken_thread.stop()
+          while screenshot_taken_thread.isAlive():
+              time.sleep(0.01)
+          logger.debug('**All screenshots saved. It is now safe to exit**', True)
+          # Finish all imgur uploads (could be time consuming!)
+          while imgur_upload_in_queue.qsize() > 0:
+              time.sleep(0.01)
+          imgur_upload_thread.stop()
+          while imgur_upload_thread.isAlive():
+              time.sleep(0.01)
+
+          # Finish all application website updates
+          while screenshot_uploaded_in_queue.qsize() > 0:
+              time.sleep(0.01)
+          screenshot_uploaded_thread.stop()
+          while screenshot_uploaded_thread.isAlive():
+              time.sleep(0.01)
+          
+          while screenshot_taken_thread.isAlive() or imgur_upload_thread.isAlive() or screenshot_uploaded_thread.isAlive():
+              time.sleep(0.01)
+        except KeyboardInterrupt:
+          get_unsent_screenshots_thread.stop()
+          screenshot_taken_thread.stop()
+          imgur_upload_thread.stop()
+          screenshot_uploaded_thread.stop()
+        finally:
+            logger.close()
 
         
 if __name__ == '__main__':

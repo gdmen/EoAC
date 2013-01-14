@@ -185,8 +185,8 @@ class Parser():
                               str(groups.groups()))
             
         # Get self.ac_minutes_remaining
-        # gametimemaximum = 900000
-        # gametimemaximum = <milliseconds of game length>
+        # minutesremaining = 0
+        # minutesremaining = <minutes of game remaining>
         groups = re.match('^minutesremaining\s+=\s+(\d+)', line)
         if groups:
             self.ac_minutes_remaining = int(groups.group(1))
