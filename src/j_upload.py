@@ -124,7 +124,8 @@ class AbstractUploadThread(threading.Thread):
                     else:
                         post_response = post_response.read()
                         self.logger.debug(self.log_identifier + ': POST TRUE')
-                        self.logger.debug(self.log_identifier + ': POST RESPONSE: ' +
+                        self.logger.debug(self.log_identifier +
+                                          ': POST RESPONSE: ' +
                                           str(post_response))
                         successful_post = self.handle_response(element,
                                                                post_response)

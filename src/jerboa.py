@@ -63,14 +63,15 @@ class GetUnsentScreenshotsThread(threading.Thread):
                 if not local_file_paths_json == None:
                     num_uploads = len(local_file_paths_json)
                     if num_uploads > 0:
-                        prnt = 'Uploading ' + str(num_uploads) + ' prior screenshot'
+                        prnt = ('Uploading ' + str(num_uploads) +
+                               ' prior screenshot')
                         if num_uploads != 1:
                             prnt += 's'
                         prnt += '. . .'
                         self.logger.debug(prnt, True)
                     for local_file_path in local_file_paths_json:
-                        self.logger.debug('(' + self.log_identifier + '.run): ' +
-                                          'FILE PATH: ' + local_file_path)
+                        self.logger.debug('(' + self.log_identifier + '.run): '
+                                          + 'FILE PATH: ' + local_file_path)
                         screenshot = BasicScreenshotData(
                                         local_file_path,
                                         self.config.user_id,
@@ -136,7 +137,7 @@ class ScreenshotTakenThread(AbstractUploadThread):
         else:
             self.out_queue.put(screenshot)
             self.logger.debug('Uploading ' +
-                              str(os.path.basename(screenshot.local_file_path)), True)
+                      str(os.path.basename(screenshot.local_file_path)), True)
             return True
 
 
@@ -222,7 +223,7 @@ class ScreenshotUploadedThread(AbstractUploadThread):
             return False
         else:
             self.logger.debug('Finished ' +
-                              str(os.path.basename(screenshot.local_file_path)), True)
+                      str(os.path.basename(screenshot.local_file_path)), True)
             return True
 
 
@@ -428,7 +429,9 @@ def main():
                   break
               parser.parseLine(line, screenshot_taken_in_queue)
 
-          remaining_uploads = screenshot_taken_in_queue.qsize() + imgur_upload_in_queue.qsize()
+          remaining_uploads = (screenshot_taken_in_queue.qsize() +
+                              imgur_upload_in_queue.qsize() +
+                              screenshot_uploaded_in_queue.qsize())
           prnt = str(remaining_uploads) + ' upload'
           if remaining_uploads != 1:
               prnt += 's'
@@ -444,7 +447,8 @@ def main():
           screenshot_taken_thread.stop()
           while screenshot_taken_thread.isAlive():
               time.sleep(0.01)
-          logger.debug('**All screenshots saved. It is now safe to exit**', True)
+          logger.debug('**All screenshots saved. It is now safe to exit**',
+                       True)
           # Finish all imgur uploads (could be time consuming!)
           while imgur_upload_in_queue.qsize() > 0:
               time.sleep(0.01)
@@ -459,7 +463,9 @@ def main():
           while screenshot_uploaded_thread.isAlive():
               time.sleep(0.01)
           
-          while screenshot_taken_thread.isAlive() or imgur_upload_thread.isAlive() or screenshot_uploaded_thread.isAlive():
+          while (screenshot_taken_thread.isAlive() or
+                imgur_upload_thread.isAlive() or
+                screenshot_uploaded_thread.isAlive()):
               time.sleep(0.01)
         except KeyboardInterrupt:
           get_unsent_screenshots_thread.stop()
