@@ -447,7 +447,7 @@ def main():
           screenshot_taken_thread.stop()
           while screenshot_taken_thread.isAlive():
               time.sleep(0.01)
-          logger.debug('**All screenshots saved. It is now safe to exit**',
+          logger.debug('**It is now safe to exit. All screenshot metadata saved.**',
                        True)
           # Finish all imgur uploads (could be time consuming!)
           while imgur_upload_in_queue.qsize() > 0:
