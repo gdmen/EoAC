@@ -64,7 +64,7 @@ class GetUnsentScreenshotsThread(threading.Thread):
                     num_uploads = len(local_file_paths_json)
                     if num_uploads > 0:
                         prnt = ('Uploading ' + str(num_uploads) +
-                               ' prior screenshot')
+                               ' prior image')
                         if num_uploads != 1:
                             prnt += 's'
                         prnt += '. . .'
@@ -72,11 +72,17 @@ class GetUnsentScreenshotsThread(threading.Thread):
                     for local_file_path in local_file_paths_json:
                         self.logger.debug('(' + self.log_identifier + '.run): '
                                           + 'FILE PATH: ' + local_file_path)
-                        screenshot = BasicScreenshotData(
-                                        local_file_path,
-                                        self.config.user_id,
-                                        self.config.upload_key)
-                        self.imgur_queue.put(screenshot, True)
+                        try:
+                            with open(local_file_path) as ss:                               
+                                screenshot = BasicScreenshotData(
+                                                local_file_path,
+                                                self.config.user_id,
+                                                self.config.upload_key)
+                                self.imgur_queue.put(screenshot, True)
+                        except IOError as e:
+                            self.logger.debug('(' + self.log_identifier +
+                                              '.run): ' + 'FILE DNE: ' +
+                                              local_file_path)
                     self.successful_post = True
                 
         except ValueError:
@@ -136,7 +142,7 @@ class ScreenshotTakenThread(AbstractUploadThread):
             return False
         else:
             self.out_queue.put(screenshot)
-            self.logger.debug('Uploading ' +
+            self.logger.debug('Saved metadata: ' +
                       str(os.path.basename(screenshot.local_file_path)), True)
             return True
 
@@ -222,7 +228,7 @@ class ScreenshotUploadedThread(AbstractUploadThread):
                               str(post_response))
             return False
         else:
-            self.logger.debug('Finished ' +
+            self.logger.debug('Uploaded image: ' +
                       str(os.path.basename(screenshot.local_file_path)), True)
             return True
 
@@ -353,10 +359,12 @@ def main():
           screenshot_taken_thread.stop()
           imgur_upload_thread.stop()
           screenshot_uploaded_thread.stop()
-        logger.close()
+        logger.close(True)
         raw_input("Press Enter to Quit")
         return
-       
+
+    #ac_client_started = False
+    #ac_client = None
     try:
         """
         bash = open(client_bash)
@@ -380,12 +388,16 @@ def main():
         """
         ac_client = subprocess.Popen(client_bash,
                                      shell = False,
+                                     stdin = subprocess.PIPE,
                                      stdout = subprocess.PIPE,
                                      stderr = subprocess.STDOUT)
+        ac_client_started = True
         # Avoid having to re-interpret dot notation in the loop
         ac_readline = ac_client.stdout.readline
         logger.debug('(main): Start parsing loop.')
         while True:
+            ac_client.stdin.write('\n')
+            ac_client.stdin.flush()
             line = ac_readline()
             if not line or ac_client.poll() != None:
                 raise KeyboardInterrupt()
@@ -413,67 +425,88 @@ def main():
         screenshot_taken_thread.stop()
         imgur_upload_thread.stop()
         screenshot_uploaded_thread.stop()
-        logger.close()
+        logger.close(True)
         raw_input("Press Enter to Quit")
         return
     except KeyboardInterrupt:
         try:
-          logger.debug('KeyboardInterrupt (main)')
+            logger.debug('KeyboardInterrupt (main)')
+            
+            logger.debug('\nSaving screenshot metadata, DO NOT EXIT.', True)
 
-          logger.debug('\nSaving screenshots, do not exit.', True)
-          # Make sure we get any remaining output chilling in the subprocess's
-          # output pipe
-          while True:
-              line = ac_readline()
-              if not line:
+            # If client was started and is still running
+            if ac_client_started and ac_client.poll() == None:
+                ac_client.send_signal(signal.CTRL_C_EVENT)
+                ac_client.send_signal(signal.CTRL_C_EVENT)
+                while not ac_client.returncode:
+                    try:
+                        ac_client.kill()
+                        time.sleep(0.05)
+                    except:
+                        logger.debug('UNEXPECTED (main): ac_client.kill(): ' +
+                                     traceback.format_exc())
+                        logger.debug('UNEXPECTED (main): ac_client.returncode: ' +
+                                     str(ac_client.returncode))
+                        break
+            
+            # Make sure we get any remaining output chilling in the subprocess's
+            # output pipe
+            while True:
+                line = ac_readline()
+                if not line:
                   break
-              parser.parseLine(line, screenshot_taken_in_queue)
+                parser.parseLine(line, screenshot_taken_in_queue)
+            ac_client.stdout.close()
 
-          remaining_uploads = (screenshot_taken_in_queue.qsize() +
+            remaining_uploads = (screenshot_taken_in_queue.qsize() +
                               imgur_upload_in_queue.qsize() +
                               screenshot_uploaded_in_queue.qsize())
-          prnt = str(remaining_uploads) + ' upload'
-          if remaining_uploads != 1:
-              prnt += 's'
-          prnt += ' remaining, please wait . . .'
-          logger.debug(prnt, True)
+            prnt = str(remaining_uploads) + ' upload'
+            if remaining_uploads != 1:
+                prnt += 's'
+            prnt += ' remaining, please wait . . .'
+            logger.debug(prnt, True)
 
-          # Close the log file when no longer running
-          # Make sure all upload threads are done
-          # (Don't want to interrupt an upload)
-          # TODO: add a backoff here + a message ?
-          while screenshot_taken_in_queue.qsize() > 0:
-              time.sleep(0.01)
-          screenshot_taken_thread.stop()
-          while screenshot_taken_thread.isAlive():
-              time.sleep(0.01)
-          logger.debug('**It is now safe to exit. All screenshot metadata saved.**',
+            # Close the log file when no longer running
+            # Make sure all upload threads are done
+            # (Don't want to interrupt an upload)
+            # TODO: add a backoff here + a message ?
+            while screenshot_taken_in_queue.qsize() > 0:
+                time.sleep(0.25)
+            screenshot_taken_thread.stop()
+            while screenshot_taken_thread.isAlive():
+                time.sleep(0.25)
+            logger.debug('\n**It is now safe to exit. All screenshot metadata saved.**\n',
                        True)
-          # Finish all imgur uploads (could be time consuming!)
-          while imgur_upload_in_queue.qsize() > 0:
-              time.sleep(0.01)
-          imgur_upload_thread.stop()
-          while imgur_upload_thread.isAlive():
-              time.sleep(0.01)
+            # Finish all imgur uploads (could be time consuming!)
+            while imgur_upload_in_queue.qsize() > 0:
+                time.sleep(0.25)
+            imgur_upload_thread.stop()
+            while imgur_upload_thread.isAlive():
+                time.sleep(0.25)
 
-          # Finish all application website updates
-          while screenshot_uploaded_in_queue.qsize() > 0:
-              time.sleep(0.01)
-          screenshot_uploaded_thread.stop()
-          while screenshot_uploaded_thread.isAlive():
-              time.sleep(0.01)
-          
-          while (screenshot_taken_thread.isAlive() or
-                imgur_upload_thread.isAlive() or
-                screenshot_uploaded_thread.isAlive()):
-              time.sleep(0.01)
+            # Finish all application website updates
+            while screenshot_uploaded_in_queue.qsize() > 0:
+                time.sleep(0.25)
+            screenshot_uploaded_thread.stop()
+            while screenshot_uploaded_thread.isAlive():
+                time.sleep(0.25)
+
+            while (screenshot_taken_thread.isAlive() or
+                   imgur_upload_thread.isAlive() or
+                   screenshot_uploaded_thread.isAlive()):
+                time.sleep(0.25)
         except KeyboardInterrupt:
-          get_unsent_screenshots_thread.stop()
-          screenshot_taken_thread.stop()
-          imgur_upload_thread.stop()
-          screenshot_uploaded_thread.stop()
+            get_unsent_screenshots_thread.stop()
+            screenshot_taken_thread.stop()
+            imgur_upload_thread.stop()
+            screenshot_uploaded_thread.stop()
         finally:
-            logger.close()
+            get_unsent_screenshots_thread.stop()
+            screenshot_taken_thread.stop()
+            imgur_upload_thread.stop()
+            screenshot_uploaded_thread.stop()
+            logger.close(True)
 
         
 if __name__ == '__main__':

@@ -7,6 +7,7 @@ Copyright 2013, gdm
 """
 
 import os
+import time
 
 class Logger():
     """
@@ -24,8 +25,10 @@ class Logger():
         self.is_debug = is_debug
         self.logfile = self.createLogFile(logdir_name, logfile_name)
         self.msg_length = 256
+        self.force_close = False
 
-    def close(self):
+    def close(self, force_close = False):
+        self.force_close = force_close
         if self.is_debug:
             self.logfile.close()
 
@@ -53,23 +56,23 @@ class Logger():
         Parameters:
             msg = <string> message to print
         """
+        if printout:
+            print msg[:self.msg_length]
         if self.is_debug:
-            self.write(msg, printout)
+            self.write(msg)
 
-    def write(self, msg, printout = False):
+    def write(self, msg):
         """
         Only writes the first 'self.msg_length' characters of each 'msg' into
         'self.logfile' in order to avoid unreadable logs.
         """
         try:
-            if printout:
-              print msg[:self.msg_length]
             if not self.logfile.closed:
-                self.logfile.write(msg[:self.msg_length] + '\n')
-            else:
+                self.logfile.write(time.strftime("%H:%M:%S", time.gmtime()) + ": " + msg[:self.msg_length] + '\n')
+            elif not self.force_close:
                 print ('ERROR (Logger.write):' +
                       ' logfile = ' + self.logfile.name +
-                      ' msg = ' + msg +
+                      ' msg = ' + msg[:self.msg_length] +
                       ' file was probably closed!')
         except:
             print ('ERROR UNEXPECTED (Logger.write):')
