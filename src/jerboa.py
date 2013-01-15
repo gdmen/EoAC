@@ -396,11 +396,11 @@ def main():
         ac_readline = ac_client.stdout.readline
         logger.debug('(main): Start parsing loop.')
         while True:
-            ac_client.stdin.write('\n')
-            ac_client.stdin.flush()
             line = ac_readline()
             if not line or ac_client.poll() != None:
                 raise KeyboardInterrupt()
+            ac_client.stdin.write('\n')
+            ac_client.stdin.flush()
             parser.parseLine(line, screenshot_taken_in_queue)
             # Windows holds up the KeyboardInterrupt and this script never
             # receives it (without this sleep)
@@ -434,8 +434,8 @@ def main():
             
             logger.debug('\nSaving screenshot metadata, DO NOT EXIT.', True)
 
-            # If client was started and is still running
-            if ac_client_started and ac_client.poll() == None:
+            # If windows client was started and is still running
+            if  os.name == c.NT_OS_NAME and ac_client_started and ac_client.poll() == None:
                 ac_client.send_signal(signal.CTRL_C_EVENT)
                 ac_client.send_signal(signal.CTRL_C_EVENT)
                 while not ac_client.returncode:
