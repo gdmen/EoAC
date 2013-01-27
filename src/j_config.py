@@ -21,7 +21,7 @@ LOG_DIR = LOG_NAME + '_logs'
 LOGFILE_PREFIX = LOG_NAME + '_log_'
 LOGFILE_SUFFIX = '.txt'
 
-HOST_URL = 'http://hype-clan.com/jerbo_a/restful_api/'
+HOST_URL = 'http://hype-clan.com/eyeofac/restful_api/'
 #HOST_URL = 'http://localhost/jerboa_website/restful_api/'
 
 APPLICATION_NAME = 'EoAC'
