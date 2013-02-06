@@ -10,7 +10,10 @@ Copyright 2013, gdm
 
 # TODO: get rid of the config import?
 import j_config as c
+from j_parser import BasicScreenshotData, ScreenshotData, BlacklistScreenshotData
+import base64
 import json
+import os
 import Queue
 import threading
 import time

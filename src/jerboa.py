@@ -19,7 +19,6 @@ import Queue
 import sys
 import subprocess
 import signal
-import base64
 
 
 def versionCheck(config, logger):
