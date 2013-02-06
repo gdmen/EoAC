@@ -6,7 +6,7 @@ Copyright 2013, gdm
 """
 ###############################################################################
 # Annoying, but these params must be manually kept up to date along with the
-# params in website/j_config.py
+# params in website/includes/config.php
 APP_NAME = "Eye of AC"
 # To be clear, this 'LOG_NAME' is for parsing cubescript output
 LOG_NAME = "EoAC"
@@ -26,7 +26,7 @@ HOST_URL = 'http://hype-clan.com/eyeofac/restful_api/'
 
 APPLICATION_NAME = 'EoAC'
 ASSAULTCUBE_VERSION = '1.1.0.4'
-APPLICATION_VERSION = ASSAULTCUBE_VERSION + '.3'
+APPLICATION_VERSION = ASSAULTCUBE_VERSION + '.2'
 
 # Exiting procedure timeout
 EXIT_RETRY_INTERVAL = 0.01
@@ -43,6 +43,7 @@ IMGUR_API_KEY = '475add36e0e43bd3d3c4510fd436e8e2'
 IMGUR_UPLOAD_URL = 'http://api.imgur.com/2/upload.json'
 
 # Jerboa's RESTful urls
+VERSION_CHECK_URL = HOST_URL + 'version_check.php'
 GET_UNSENT_SCREENSHOTS_URL = HOST_URL + 'get_unsent_screenshots.php'
 TAKEN_SCREENSHOT_URL = HOST_URL + 'taken_screenshot.php'
 UPLOADED_SCREENSHOT_URL = HOST_URL + 'uploaded_screenshot.php'

@@ -10,6 +10,7 @@ Copyright 2013, gdm
 
 # TODO: get rid of the config import?
 import j_config as c
+import json
 import Queue
 import threading
 import time
@@ -26,7 +27,7 @@ def post(url, params, logger):
         Result on success
         False on failure
     """
-    logger.debug('(post): url = ' + url)
+    logger.debug('(post): url = ' + url.split('/')[-1])
     try:
         for key, value in params.items():
             params[key] = str(value)
@@ -87,7 +88,7 @@ class AbstractUploadThread(threading.Thread):
         """
         raise NotImplementedError("Should have implemented this")
         
-    def handle_response(self, element, post_response):
+    def handleResponse(self, element, post_response):
         """
         Handles the response from POST.
         Returns TRUE on expected response, FALSE to trigger a retry
@@ -127,7 +128,7 @@ class AbstractUploadThread(threading.Thread):
                         self.logger.debug(self.log_identifier +
                                           ': POST RESPONSE: ' +
                                           str(post_response))
-                        successful_post = self.handle_response(element,
+                        successful_post = self.handleResponse(element,
                                                                post_response)
                                                 
                     self.logger.debug(self.log_identifier + ': queue size: ' +
@@ -148,3 +149,213 @@ class AbstractUploadThread(threading.Thread):
                 self.logger.debug(self.log_identifier + 'ERROR unexpected: ' +
                       traceback.format_exc())
                 raise
+
+
+class GetUnsentScreenshotsThread(threading.Thread):
+    """
+    GetUnsentScreenshotsThread gets a list of local_file_paths corresponding
+    to screenshots that still need to be uploaded to Imgur & Jerboa
+
+    GetUnsentScreenshotsThread then instantiates ScreenshotData elements and
+    pushes them into the normal queue process for uploads (skipping the normal
+    first step of parsing AC client logs)
+    """
+    def __init__(self, imgur_queue, config, logger):
+        self.imgur_queue = imgur_queue
+        self.config = config
+        self.upload_url = c.GET_UNSENT_SCREENSHOTS_URL
+        self.log_identifier = 'GetUnsentScreenshotsThread'
+        self.logger = logger
+        self.successful_post = False
+        threading.Thread.__init__(self)
+    
+    def stop(self):
+        self.successful_post = True
+
+    def run(self):
+        try:
+            while not self.successful_post:
+                post_response = post(self.upload_url,
+                                     {'user_id' : self.config.user_id,
+                                      'upload_key' : self.config.upload_key},
+                                     self.logger)
+                if post_response == False:
+                    continue
+
+                post_response = post_response.read()
+                self.logger.debug('POST RESPONSE: ' + str(post_response))
+                local_file_paths_json = json.loads(post_response)
+                self.logger.debug('JSON RESPONSE: ' +
+                                  str(local_file_paths_json))
+
+                if not local_file_paths_json == None:
+                    num_uploads = len(local_file_paths_json)
+                    if num_uploads > 0:
+                        prnt = ('Uploading ' + str(num_uploads) +
+                               ' prior image')
+                        if num_uploads != 1:
+                            prnt += 's'
+                        prnt += '. . .'
+                        self.logger.debug(prnt, True)
+                    for local_file_path in local_file_paths_json:
+                        self.logger.debug('(' + self.log_identifier + '.run): '
+                                          + 'FILE PATH: ' + local_file_path)
+                        try:
+                            with open(local_file_path) as ss:                               
+                                screenshot = BasicScreenshotData(
+                                                local_file_path,
+                                                self.config.user_id,
+                                                self.config.upload_key)
+                                self.imgur_queue.put(screenshot, True)
+                        except IOError as e:
+                            self.logger.debug('(' + self.log_identifier +
+                                              '.run): ' + 'FILE DNE: ' +
+                                              local_file_path)
+                    self.successful_post = True
+                
+        except ValueError:
+            self.logger.debug('UNEXPECTED NON-JSON RESPONSE.')
+            return False
+        except:
+            self.logger.debug(self.log_identifier + 'ERROR unexpected: ' +
+                              traceback.format_exc())
+            raise
+
+
+class ScreenshotTakenThread(AbstractUploadThread):
+    def __init__(self, in_queue, out_queue, config, logger):
+        super(ScreenshotTakenThread, self).__init__(in_queue,
+                                                    c.TAKEN_SCREENSHOT_URL,
+                                                    'ScreenshotTakenThread',
+                                                    logger)
+        self.out_queue = out_queue
+        self.config = config
+        
+    def posterize(self, screenshot):
+        """
+        Converts the input element to the corresponding dictionary of POST
+        parameters
+        """
+        post_array = {'upload_key' : self.config.upload_key,
+                      'user_id' : self.config.user_id,
+                      'local_file_path' : screenshot.local_file_path,
+                      'ac_map' : screenshot.ac_map,
+                      'ac_mode' : screenshot.ac_mode,
+                      'ac_mastermode' : screenshot.ac_mastermode,
+                      'ac_ip' : screenshot.ac_ip,
+                      'ac_port' : screenshot.ac_port,
+                      'ac_minutes_remaining' : screenshot.ac_minutes_remaining,
+                      'ac_players' : screenshot.ac_players,
+                      'title' : screenshot.title,
+                      'caption' : screenshot.caption,
+                      'tags' : screenshot.tags}
+
+        # TODO: Perhaps find a more extensible way of handling this
+        if isinstance(screenshot, BlacklistScreenshotData):
+            post_array['blacklist_name'] = screenshot.name
+            post_array['blacklist_ip'] = screenshot.ip
+            post_array['blacklist_reason'] = screenshot.reason
+
+        return post_array
+        
+    def handleResponse(self, screenshot, post_response):
+        """
+        Handles the response from POST.
+        Returns TRUE on expected response, FALSE for a retry
+        """
+        if len(post_response) > 0:
+            self.logger.debug(self.log_identifier + ': POST RESPONSE ERROR')
+            self.logger.debug(self.log_identifier + ': POST RESPONSE: ' +
+                              str(post_response))
+            return False
+        else:
+            self.out_queue.put(screenshot)
+            self.logger.debug('Saved metadata: ' +
+                      str(os.path.basename(screenshot.local_file_path)), True)
+            return True
+
+
+class ImgurUploadThread(AbstractUploadThread):
+    def __init__(self, in_queue, out_queue, logger):
+        super(ImgurUploadThread, self).__init__(in_queue,
+                                                c.IMGUR_UPLOAD_URL,
+                                                'ImgurUploadThread', logger)
+        self.out_queue = out_queue
+        
+    def posterize(self, screenshot):
+        """
+        Converts the input element to the corresponding dictionary of POST
+        parameters
+        """
+        # Convert image to base64
+        source = open(screenshot.local_file_path, 'rb')
+        self.logger.debug('ss_data.local_file_path: ' +
+                          screenshot.local_file_path)
+        screenshot_base64 = base64.b64encode(source.read())
+        return {'key' : c.IMGUR_API_KEY,
+                'image' : screenshot_base64}  
+        
+    def handleResponse(self, screenshot, post_response):
+        """
+        Handles the response from POST.
+        Returns TRUE on expected response, FALSE for a retry
+        """
+        try:
+            imgur_json = json.loads(post_response)
+            self.logger.debug('JSON RESPONSE: ' + str(imgur_json))
+
+            if imgur_json == None or 'error' in imgur_json:
+                self.logger.debug('JSON RESPONSE ERROR.')
+                return False
+            elif 'upload' in imgur_json:
+                self.logger.debug('JSON RESPONSE SUCCESS.')
+                self.logger.debug('(' + self.log_identifier + '.run): ' +
+                                  screenshot.local_file_path + ' to imgur: ' +
+                                  str(time.time()))
+                screenshot.imgur_hash = imgur_json['upload']['image']['hash']
+                screenshot.imgur_delete_hash = imgur_json['upload']['image']['deletehash']
+                # Push to queue that updates Jerboa with imgur hashes
+                self.out_queue.put(screenshot)
+                return True
+            else:
+                self.logger.debug('UNEXPECTED JSON RESPONSE.')
+                return False
+        except ValueError:
+            self.logger.debug('UNEXPECTED NON-JSON RESPONSE.')
+            return False
+
+
+class ScreenshotUploadedThread(AbstractUploadThread):
+    def __init__(self, in_queue, config, logger):
+        super(ScreenshotUploadedThread, self).__init__(
+            in_queue, c.UPLOADED_SCREENSHOT_URL,
+            'ScreenshotUploadThread', logger)
+        self.config = config
+        
+    def posterize(self, screenshot):
+        """
+        Converts the input element to the corresponding dictionary of POST
+        parameters
+        """
+        self.logger.debug('LOCAL FILE PATH, UPLOADED THREAD: ' +
+                          screenshot.local_file_path)
+        return {'upload_key' : self.config.upload_key,
+                'user_id' : self.config.user_id,
+                'local_file_path' : screenshot.local_file_path,
+                'imgur_hash' : screenshot.imgur_hash,
+                'imgur_delete_hash' : screenshot.imgur_delete_hash}
+        
+    def handleResponse(self, screenshot, post_response):
+        """
+        Handles the response from POST.
+        Returns TRUE on expected response, FALSE for a retry
+        """
+        if len(post_response) > 0:
+            self.logger.debug(self.log_identifier + ': POST RESPONSE ERROR')
+            self.logger.debug(self.log_identifier + ': POST RESPONSE: ' +
+                              str(post_response))
+            return False
+        else:
+            self.logger.debug('Uploaded image: ' +
+                      str(os.path.basename(screenshot.local_file_path)), True)
+            return True
