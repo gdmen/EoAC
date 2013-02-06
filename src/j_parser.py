@@ -270,10 +270,6 @@ class Parser():
                     self.blacklist_reason,
                     self.blacklist_name + ' self.blacklist',
                     self.blacklist_reason, 'self.blacklist')
-            self.logger.debug('(Parser.parseLine): Right before push ' + screenshot.local_file_path);
             screenshot_taken_queue.put(screenshot, True)
             self.logger.debug('(Parser.parseLine): Pushed ' + screenshot.local_file_path + ' into queue!');
             self.reset()
-            self.logger.debug('(Parser.parseLine): ' +
-                              self.most_recent_ss_name +
-                              ' procedure complete: ' + str(time.time()))

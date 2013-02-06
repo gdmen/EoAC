@@ -52,6 +52,12 @@ def main():
     is_debug = c.IS_DEBUG
     if len(sys.argv) > 4:
         print "That's too many command line args!"
+        if os.name == c.POSIX_OS_NAME:
+            print '> ./' + c.FILE_NAME_NIX +' -d'
+            print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+        elif os.name == c.NT_OS_NAME:
+            print '> ' + c.FILE_NAME_WIN +' -d'
+            print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
         raw_input("Press Enter to Quit")
         return
 
@@ -75,11 +81,6 @@ def main():
             logger.debug('(main): OS is NT.')
         else:
             logger.debug('UNEXPECTED (main): OS is ' + os.name + '.')
-        # If bash file was specified by user, use that instead
-        # Might throw an IndexError
-        if len(sys.argv) >= 3 and '-c' in sys.argv:
-            client_bash = sys.argv[sys.argv.index('-c') + 1]
-            print "Using specified bash file (" + client_bash + ")."
         if os.name == c.POSIX_OS_NAME:
             client_bash = './' + client_bash
         logger.debug('(main): client bash is ' + client_bash + '.')
@@ -104,13 +105,19 @@ def main():
         threads_initiated = False
         # Instantiate Parser
         parser = Parser(logger)
+        # If config file was specified by user, use that instead
+        # Might throw an IndexError
+        client_config = c.CONFIG_FILE
+        if len(sys.argv) >= 3 and '-c' in sys.argv:
+            client_config = sys.argv[sys.argv.index('-c') + 1]
+            print "Using specified config file (" + client_config + ")."
         # Read in configuration parameters
-        parser.loadConfig(c.CONFIG_FILE)
+        parser.loadConfig(client_config)
 
         # Die if config parameters were not all there
         if not parser.config.complete():
-            logger.debug('(main): ' + c.CONFIG_FILE + ' missing parameters.')
-            print 'ERROR: missing configuration parameter in ' + c.CONFIG_FILE
+            logger.debug('(main): ' + client_config + ' missing parameters.')
+            print 'ERROR: missing configuration parameter in ' + client_config
             logger.close()
             raw_input("Press Enter to Quit")
             return
