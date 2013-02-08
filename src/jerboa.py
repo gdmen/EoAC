@@ -133,6 +133,8 @@ def main():
         # Version check
         if not versionCheck(parser.config, logger):
             logger.debug('**You must download the latest version of ' + c.APPLICATION_NAME + '**', True)
+            logger.close(True)
+            raw_input("Press Enter to Quit")
             return
 
         logger.debug(' (main): Version check success!')

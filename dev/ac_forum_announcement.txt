@@ -1,0 +1,36 @@
+Hello folks,
+
+Over the past 9 months, I've spent hundreds of hours on this pet project of mine. I'd like to introduce you to the public BETA of. . .
+[url=http://hype-clan.com/eyeofac]Eye of AC[/url], a screenshot sharing application for AssaultCube!
+
+When you run EoAC, it starts up your normal AssaultCube client and then:
+[list=1]
+[*]Automatically uploads your screenshots while you play AC.
+[*]Saves metadata about the screenshots including players in game, scores, and more!
+[*]Allows you to [url=http://hype-clan.com/eyeofac/feed.php]search and sort[/url] yours and others' screenshots on the EoAC website.
+[/list]
+
+
+EoAC is a simple drag-and-drop addition to your AssaultCube directory. You can download EoAC [url=http://hype-clan.com/eyeofac/download.php]here[/url].
+
+Future features:
+[list=1]
+[*]Blacklist command: '/bl <cn> <reason>'
+(for example: /bl 2 far knife).
+This will give you a copy-pasteable BBCode segment for the AC forum blacklist thread.
+[*]Tags & Albums!
+[*]Full mobile resolution support for the EoAC website.
+[/list]
+
+
+EoAC has been under development and in-game testing for months, but this is a BETA release and there will quite likely be bugs. EoAC comes with a robust logging system and a [url=http://hype-clan.com/eyeofac/forum/viewforum.php?id=2]bug reporting forum[/url]. Please report issues so we can get them fixed!
+
+[url=http://hype-clan.com/eyeofac/forum/viewforum.php?id=9]You can even help decide what features EoAC will have next![/url]
+
+[b]Many thanks to the people who have helped![/b]
+Verse, JoeSmith, Ikljo - Client testing
+JoeSmith, Ikljo - Website feedback
+JoeSmith - Hosting & Landing page image
+HyPE & B} clans - Website feedback
+
+If you're tired of manually uploading and organizing your screenshots, [url=http://hype-clan.com/eyeofac]try out EoAC![/url]
