@@ -54,10 +54,10 @@ def main():
         print "That's too many command line args!"
         if os.name == c.POSIX_OS_NAME:
             print '> ./' + c.FILE_NAME_NIX +' -d'
-            print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+            print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
         elif os.name == c.NT_OS_NAME:
             print '> ' + c.FILE_NAME_WIN +' -d'
-            print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
+            print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
         raw_input("Press Enter to Quit")
         return
 
@@ -93,10 +93,10 @@ def main():
             print 're-run with logging enabled:'
             if os.name == c.POSIX_OS_NAME:
                 print '> ./' + c.FILE_NAME_NIX +' -d'
-                print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+                print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
             elif os.name == c.NT_OS_NAME:
                 print '> ' + c.FILE_NAME_WIN +' -d'
-                print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
+                print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
         logger.close()
         raw_input("Press Enter to Quit")
         return
@@ -171,10 +171,10 @@ def main():
             print 're-run with logging enabled:'
             if os.name == c.POSIX_OS_NAME:
                 print '> ./' + c.FILE_NAME_NIX +' -d'
-                print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+                print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
             elif os.name == c.NT_OS_NAME:
                 print '> ' + c.FILE_NAME_WIN +' -d'
-                print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
+                print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
         print '. . .'
         if threads_initiated:
           get_unsent_screenshots_thread.stop()
@@ -218,10 +218,10 @@ def main():
             print 're-run with logging enabled:'
             if os.name == c.POSIX_OS_NAME:
                 print '> ./' + c.FILE_NAME_NIX +' -d'
-                print '> ./' + c.FILE_NAME_NIX +' -d -c <custom config>'
+                print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
             elif os.name == c.NT_OS_NAME:
                 print '> ' + c.FILE_NAME_WIN +' -d'
-                print '> ' + c.FILE_NAME_WIN +' -d -c <custom config>'
+                print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
         print '. . .'
         get_unsent_screenshots_thread.stop()
         screenshot_taken_thread.stop()
