@@ -22,6 +22,14 @@ import signal
 
 
 def versionCheck(config, logger):
+    """
+    Http POSTs to the application server and checks current version.
+    If out of date, prompts for update and exits.
+    *This method is blocking.*
+    Parameters:
+        config = Config object from j_parser
+        logger = Logger object from j_logger
+    """
     log_identifier = 'versionCheck'
     successful_post = False
     while not successful_post:
@@ -247,7 +255,7 @@ def main():
                     except:
                         logger.debug('UNEXPECTED (main): ac_client.kill(): ' +
                                      traceback.format_exc())
-                        logger.debug('UNEXPECTED (main): ac_client.returncode: ' +
+                        logger.debug('CLIENT EXITED FIRST (main): ac_client.returncode: ' +
                                      str(ac_client.returncode))
                         break
             

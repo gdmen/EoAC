@@ -8,7 +8,7 @@ Copyright 2013, gdm
 # Annoying, but these params must be manually kept up to date along with the
 # params in website/includes/config.php
 APP_NAME = "Eye of AC"
-# To be clear, this 'LOG_NAME' is for parsing cubescript output
+# To be clear, this 'LOG_NAME' is for matching and parsing cubescript output
 LOG_NAME = "EoAC"
 FILE_NAME_WIN = "eoac.exe"
 FILE_NAME_NIX = "eoac"
@@ -26,7 +26,7 @@ HOST_URL = 'http://hype-clan.com/eyeofac/restful_api/'
 
 APPLICATION_NAME = 'EoAC'
 ASSAULTCUBE_VERSION = '1.1.0.4'
-APPLICATION_VERSION = ASSAULTCUBE_VERSION + '.3'
+APPLICATION_VERSION = ASSAULTCUBE_VERSION + '.4'
 
 # Exiting procedure timeout
 EXIT_RETRY_INTERVAL = 0.01

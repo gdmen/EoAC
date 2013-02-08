@@ -24,8 +24,6 @@ class BasicScreenshotData(object):
         self.upload_key = upload_key
         self.imgur_hash = ''
         self.imgur_delete_hash = ''
-        # Some metrics to report to Jerboa
-        # self.imgur_attempt_count = 0
 
 class ScreenshotData(BasicScreenshotData):
     def __init__(self, local_file_path, user_id, upload_key, ac_map, ac_mode,
