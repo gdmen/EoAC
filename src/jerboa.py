@@ -50,6 +50,21 @@ def versionCheck(config, logger):
             return False
         return True
 
+
+def printUsage():
+    """
+    Prints application usage directions
+    """
+    if os.name == c.POSIX_OS_NAME:
+        print '> ./' + c.FILE_NAME_NIX +' -d'
+        print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
+        print '> ./' + c.FILE_NAME_NIX +' -b <custom bash>'
+    elif os.name == c.NT_OS_NAME:
+        print '> ' + c.FILE_NAME_WIN +' -d'
+        print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
+        print '> ' + c.FILE_NAME_WIN +' -b <custom bash>'
+    raw_input("Press Enter to Quit")
+
     
 def main():
     """
@@ -58,15 +73,9 @@ def main():
     print c.APPLICATION_NAME + ' version ' + c.APPLICATION_VERSION
 
     is_debug = c.IS_DEBUG
-    if len(sys.argv) > 4:
+    if len(sys.argv) > 6:
         print "That's too many command line args!"
-        if os.name == c.POSIX_OS_NAME:
-            print '> ./' + c.FILE_NAME_NIX +' -d'
-            print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
-        elif os.name == c.NT_OS_NAME:
-            print '> ' + c.FILE_NAME_WIN +' -d'
-            print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
-        raw_input("Press Enter to Quit")
+        printUsage()
         return
 
     logfile_name = c.LOGFILE_PREFIX + str(time.time()) + c.LOGFILE_SUFFIX
@@ -91,6 +100,13 @@ def main():
             logger.debug('UNEXPECTED (main): OS is ' + os.name + '.')
         if os.name == c.POSIX_OS_NAME:
             client_bash = './' + client_bash
+        # If bash file was specified by user, use that instead
+        # Might throw an IndexError
+        if len(sys.argv) >= 3 and '-b' in sys.argv:
+            client_bash = sys.argv[sys.argv.index('-b') + 1]
+            print "Using specified bash file (" + client_bash + ")."
+            if os.name == c.POSIX_OS_NAME:
+                client_bash = './' + client_bash
         logger.debug('(main): client bash is ' + client_bash + '.')
     except IndexError:
         logger.debug('ERROR (main): ' + traceback.format_exc())
@@ -99,14 +115,8 @@ def main():
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            if os.name == c.POSIX_OS_NAME:
-                print '> ./' + c.FILE_NAME_NIX +' -d'
-                print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
-            elif os.name == c.NT_OS_NAME:
-                print '> ' + c.FILE_NAME_WIN +' -d'
-                print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
+            printUsage()
         logger.close()
-        raw_input("Press Enter to Quit")
         return
 
     try:
@@ -179,12 +189,7 @@ def main():
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            if os.name == c.POSIX_OS_NAME:
-                print '> ./' + c.FILE_NAME_NIX +' -d'
-                print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
-            elif os.name == c.NT_OS_NAME:
-                print '> ' + c.FILE_NAME_WIN +' -d'
-                print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
+            printUsage()
         print '. . .'
         if threads_initiated:
           get_unsent_screenshots_thread.stop()
@@ -226,12 +231,7 @@ def main():
             print 'see logfile (' + logfile_name + ').'
         else:
             print 're-run with logging enabled:'
-            if os.name == c.POSIX_OS_NAME:
-                print '> ./' + c.FILE_NAME_NIX +' -d'
-                print '> ./' + c.FILE_NAME_NIX +' -c <custom config>'
-            elif os.name == c.NT_OS_NAME:
-                print '> ' + c.FILE_NAME_WIN +' -d'
-                print '> ' + c.FILE_NAME_WIN +' -c <custom config>'
+            printUsage()
         print '. . .'
         get_unsent_screenshots_thread.stop()
         screenshot_taken_thread.stop()

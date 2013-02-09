@@ -241,6 +241,7 @@ class ScreenshotTakenThread(AbstractUploadThread):
         """
         post_array = {'upload_key' : self.config.upload_key,
                       'user_id' : self.config.user_id,
+                      'user_version' : c.APPLICATION_VERSION,
                       'local_file_path' : screenshot.local_file_path,
                       'ac_map' : screenshot.ac_map,
                       'ac_mode' : screenshot.ac_mode,
